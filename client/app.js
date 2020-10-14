@@ -1,3 +1,10 @@
+const socket = io(); //Rozkaz dla JSa: zainicjuj nowego klienta socketowego i zachowaj referencje do niego pod stałą socket. Nazwa stałej może być inna, socket to pomysł, który ułatwi utrzymywanie porządku w kodzie.
+
+//dodanie nasłuchiwacza na event message, który w przypadku wykrycia tego zdarzenia spowoduje dodanie wiadomości w HTMLu. To robi nasza funkcja addMessage. 
+socket.on('message', ({ author, content }) => addMessage(author, content)); //rozkaz: obserwuj serwer, czekając na zdarzenie message, jeśli je wykryjesz, odpal funkcję, która ma przyjąć przesyłane przez serwer dane jako event, a następnie wykorzystaj je do odpowiedniego wywołania funkcji addMessage.
+socket.on('join', ({ name }) => addMessage( 'Chat Bot', name + ' has joined the conversation!'));
+socket.on('removeUser', ( nameToRemove ) => addMessage( 'Chat Bot', nameToRemove + ' has left the conversation... :(!'));
+
 const loginForm = document.getElementById('welcome-form'); //formularz logowania.
 const messagesSection = document.getElementById('messages-section'); //sekcja z wiadomościami.
 const messagesList = document.getElementById('messages-list'); //lista wiadomości.
@@ -12,6 +19,7 @@ document.getElementById("welcome-form").addEventListener("submit", function logi
         alert("Error. Please enter your name.");
     } else {
         userName = userNameInput.value;
+        socket.emit('join', { name: userName });//Kiedy użytkownik wybierze już nazwę i zostanie ona przypisana do userName, klient emituje do serwera event join. Wraz z samym zdarzeniem wysyła oczywiście także login.
         document.querySelector('.welcome-form').classList.remove('show');
         document.querySelector('.messages-section').classList.add('show');
     }
@@ -32,11 +40,14 @@ function addMessage(author, content) {
 } //Na końcu dodaj element message do #messagesList.
 
 document.getElementById("add-messages-form").addEventListener("submit", function sendMessage(event) {
-    event.preventDefault()
-    if (messageContentInput.value == '') {
+    event.preventDefault();
+    let messageContent = messageContentInput.value;
+    if (!messageContent.length) {
         alert("Error. Please enter your message.");
     } else {
-        addMessage(userName, messageContentInput.value);
+        addMessage(userName, messageContent);
+        socket.emit('message', { author: userName, content: messageContent });//dodanie emittera, chcemy bowiem, aby wiadomość nie tylko pojawiała się na naszej lokalnej liście (to już u nas działa), ale żeby informację o niej otrzymywał serwer.W naszym przypadku jednak prześlemy zarówno event ('message') jak i dane.
         messageContentInput.value = '';
     }
 });
+
