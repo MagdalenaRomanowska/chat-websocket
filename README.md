@@ -10,3 +10,5 @@ or
 ```javascript
 npm start 
 ```
+
+And then run http://localhost:8000/ in browser - each http://localhost:8000/ for one socket / chat user.
